@@ -1,27 +1,11 @@
-// Fix: Implemented lazy initialization for the Gemini client to prevent browser-side crashes.
-// The GoogleGenAI instance is now created only when a message is sent, avoiding errors
-// from `process.env` not being available on initial page load.
+
 import { GoogleGenAI } from "@google/genai";
 
-let ai: GoogleGenAI | null = null;
+// Fix: Simplified Gemini client initialization to align with coding guidelines.
+// The GoogleGenAI instance is now created at the module level, assuming `process.env.API_KEY`
+// is available in the execution environment as per project requirements.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
-/**
- * Initializes and returns the GoogleGenAI client instance.
- * Throws an error if the API key is not configured.
- */
-const getAiClient = () => {
-  // Safely access the API key to prevent crashes in browser environments where `process` is not defined.
-  const apiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
-
-  if (!apiKey) {
-    throw new Error("API_KEY is not configured. Please add it to your environment variables.");
-  }
-
-  if (!ai) {
-    ai = new GoogleGenAI({ apiKey: apiKey });
-  }
-  return ai;
-};
 
 /**
  * Calls the Gemini API to get a response from the bot.
@@ -30,8 +14,7 @@ const getAiClient = () => {
  */
 export const getBotResponse = async (prompt: string): Promise<string> => {
   try {
-    const client = getAiClient(); // Lazily get the initialized client
-    const response = await client.models.generateContent({
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
