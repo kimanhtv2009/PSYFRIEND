@@ -1,11 +1,23 @@
-// Fix: Implemented the Gemini service to handle bot responses. This file was previously malformed,
-// causing module resolution errors and "Cannot find name" errors. The new implementation
-// correctly uses the @google/genai SDK to generate content based on user prompts.
+// Fix: Implemented lazy initialization for the Gemini client to prevent browser-side crashes.
+// The GoogleGenAI instance is now created only when a message is sent, avoiding errors
+// from `process.env` not being available on initial page load.
 import { GoogleGenAI } from "@google/genai";
 
-// The API key must be obtained exclusively from the environment variable `process.env.API_KEY`.
-// It is assumed to be pre-configured and accessible in the execution context.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+let ai: GoogleGenAI | null = null;
+
+/**
+ * Initializes and returns the GoogleGenAI client instance.
+ * Throws an error if the API key is not configured.
+ */
+const getAiClient = () => {
+  if (!process.env.API_KEY) {
+    throw new Error("API_KEY is not configured. Please add it to your environment variables.");
+  }
+  if (!ai) {
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  }
+  return ai;
+};
 
 /**
  * Calls the Gemini API to get a response from the bot.
@@ -14,7 +26,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
  */
 export const getBotResponse = async (prompt: string): Promise<string> => {
   try {
-    const response = await ai.models.generateContent({
+    const client = getAiClient(); // Lazily get the initialized client
+    const response = await client.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
@@ -25,7 +38,10 @@ export const getBotResponse = async (prompt: string): Promise<string> => {
     return response.text;
   } catch (error) {
     console.error("Error getting bot response from Gemini:", error);
-    // Re-throw the error to be handled by the UI component
-    throw new Error("Failed to fetch response from Gemini API.");
+    // Re-throw the error to be handled by the UI component in App.tsx
+    if (error instanceof Error) {
+        throw new Error(error.message || "Failed to fetch response from Gemini API.");
+    }
+    throw new Error("An unknown error occurred while fetching the response.");
   }
 };
