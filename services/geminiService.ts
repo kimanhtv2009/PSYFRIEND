@@ -10,11 +10,15 @@ let ai: GoogleGenAI | null = null;
  * Throws an error if the API key is not configured.
  */
 const getAiClient = () => {
-  if (!process.env.API_KEY) {
+  // Safely access the API key to prevent crashes in browser environments where `process` is not defined.
+  const apiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
+
+  if (!apiKey) {
     throw new Error("API_KEY is not configured. Please add it to your environment variables.");
   }
+
   if (!ai) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    ai = new GoogleGenAI({ apiKey: apiKey });
   }
   return ai;
 };
