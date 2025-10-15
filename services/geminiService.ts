@@ -1,25 +1,31 @@
-// Fix: Replaced placeholder content with a valid implementation for the Gemini service.
-// This resolves the module and syntax errors in this file and allows App.tsx to import getBotResponse.
+// Fix: Implemented the Gemini service to handle bot responses. This file was previously malformed,
+// causing module resolution errors and "Cannot find name" errors. The new implementation
+// correctly uses the @google/genai SDK to generate content based on user prompts.
 import { GoogleGenAI } from "@google/genai";
 
-// The API key is sourced from the environment variable `process.env.API_KEY` as per guidelines.
-// It's assumed to be set in the execution environment.
+// The API key must be obtained exclusively from the environment variable `process.env.API_KEY`.
+// It is assumed to be pre-configured and accessible in the execution context.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 /**
- * Generates a response from the Gemini model.
- * @param prompt The user's input text.
- * @returns The model's response text.
+ * Calls the Gemini API to get a response from the bot.
+ * @param prompt The user's message.
+ * @returns The bot's response text.
  */
 export const getBotResponse = async (prompt: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash', // Using gemini-2.5-flash for basic text tasks as per guidelines.
-    contents: prompt,
-    config: {
-      // Provide a system instruction to define the bot's persona and language.
-      systemInstruction: 'You are PsyFriend, a friendly and helpful AI assistant who communicates in Vietnamese. Your goal is to provide supportive and empathetic conversations.',
-    }
-  });
-  // Extract the text from the response as per guidelines.
-  return response.text;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: "You are PsyFriend, a friendly and helpful AI assistant designed to provide psychological support. Always respond in Vietnamese.",
+      }
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Error getting bot response from Gemini:", error);
+    // Re-throw the error to be handled by the UI component
+    throw new Error("Failed to fetch response from Gemini API.");
+  }
 };
