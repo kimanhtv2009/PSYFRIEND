@@ -1,0 +1,5 @@
+{
+  "name": "PsyFriend Chatbot",
+  "description": "A modern, clean, and user-friendly chatbot interface built with React and Tailwind CSS, powered by the Gemini API. The application provides a responsive chat experience in Vietnamese.",
+  "requestFramePermissions": []
+}
